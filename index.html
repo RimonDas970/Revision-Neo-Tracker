@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spaced Revision Tracker</title>
+    <style>
+        :root {
+            /* Light Theme Variables */
+            --bg-color: #f6f8fa;
+            --card-bg: #ffffff;
+            --text-color: #1f2328;
+            --text-muted: #656d76;
+            --accent-color: #0969da;
+            --accent-hover: #0550ae;
+            --border-color: #d0d7de;
+            --error-color: #cf222e;
+            --success-color: #1a7f37;
+            --badge-bg: #eaeeef;
+            --badge-text: #24292f;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --glow: none;
+        }
+
+        [data-theme="dark"] {
+            /* Dark Theme Variables (Neon Green) */
+            --bg-color: #0f1117;
+            --card-bg: #161b22;
+            --text-color: #e6edf3;
+            --text-muted: #8b949e;
+            --accent-color: #39ff14;
+            --accent-hover: #32e612;
+            --border-color: #30363d;
+            --error-color: #ff7b72;
+            --success-color: #2ea043;
+            --badge-bg: #21262d;
+            --badge-text: #e6edf3;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --glow: 0 0 8px #39ff14;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Mobile-first container */
+        .app-container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        button {
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .primary-btn {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            padding: 14px 16px;
+            width: 100%;
+        }
+
+        [data-theme="dark"] .primary-btn {
+            color: #000000; /* Dark text on neon green */
+            box-shadow: var(--glow);
+        }
+
+        .primary-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .primary-btn:active {
+            transform: translateY(0);
+        }
+
+        .secondary-btn {
+            background-color: transparent;
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 14px 16px;
+        }
+
+        .secondary-btn:hover {
+            background-color: var(--badge-bg);
+        }
+
+        #theme-toggle {
+            background: none;
+            font-size: 1.5rem;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #theme-toggle:hover {
+            background-color: var(--badge-bg);
+        }
+
+        /* Forms */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(57, 255, 20, 0.2);
+        }
+
+        [data-theme="light"] input:focus {
+            box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.2);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
+        }
+
+        [data-theme="dark"] .card:hover {
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Highlight Section (Today's Revisions) */
+        .highlight-section {
+            background-color: rgba(9, 105, 218, 0.05);
+            padding: 20px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--accent-color);
+        }
+
+        [data-theme="dark"] .highlight-section {
+            background-color: rgba(57, 255, 20, 0.05);
+        }
+
+        .revision-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .revision-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .revision-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+
+        .revision-day {
+            background-color: var(--accent-color);
+            color: #ffffff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        [data-theme="dark"] .revision-day {
+            color: #000000;
+            box-shadow: var(--glow);
+        }
+
+        /* All Lectures List */
+        .lecture-card {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .lecture-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .lecture-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .icon-btn:hover {
+            color: var(--accent-color);
+            background-color: var(--badge-bg);
+        }
+
+        .icon-btn.delete:hover {
+            color: var(--error-color);
+        }
+
+        /* Badges */
+        .badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background-color: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 44px; /* Touch friendly */
+        }
+
+        .badge:hover {
+            filter: brightness(0.9);
+        }
+
+        [data-theme="dark"] .badge:hover {
+            filter: brightness(1.2);
+        }
+
+        .badge.completed {
+            background-color: var(--success-color);
+            color: #ffffff;
+            text-decoration: line-through;
+            border-color: var(--success-color);
+            opacity: 0.8;
+        }
+
+        /* Utilities */
+        .progress {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .error {
+            color: var(--error-color);
+            font-size: 0.875rem;
+            margin-top: 8px;
+            font-weight: 500;
+            padding: 8px;
+            background-color: rgba(207, 34, 46, 0.1);
+            border-radius: 6px;
+        }
+
+        [data-theme="dark"] .error {
+            background-color: rgba(255, 123, 114, 0.1);
+        }
+
+        .info-message {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--bg-color);
+            padding: 24px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top bar -->
+        <header>
+            <h1>Revision Tracker</h1>
+            <button id="theme-toggle" aria-label="Toggle Dark Mode">🌙</button>
+        </header>
+
+        <main style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Section 1: Add Lecture Form -->
+            <section id="add-lecture-section">
+                <h2>Add Lecture</h2>
+                <form id="add-lecture-form">
+                    <input type="date" id="lecture-date" required aria-label="Lecture Date">
+                    <input type="text" id="lecture-title" placeholder="Lecture Title" required aria-label="Lecture Title">
+                    <button type="submit" class="primary-btn">Add Lecture</button>
+                </form>
+                <div id="error-message" class="error hidden"></div>
+            </section>
+
+            <!-- Section 2: Today's Revisions -->
+            <section id="todays-revisions-section" class="highlight-section">
+                <h2>Today's Revisions</h2>
+                <div id="todays-revisions-list">
+                    <!-- Revision cards injected here -->
+                </div>
+                <div id="revision-limit-message" class="info-message hidden"></div>
+            </section>
+
+            <!-- Section 3: All Lectures list -->
+            <section id="all-lectures-section">
+                <h2>All Lectures</h2>
+                <div id="all-lectures-list">
+                    <!-- Lecture cards injected here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Lecture</h2>
+            <form id="edit-lecture-form">
+                <input type="hidden" id="edit-lecture-id">
+                <input type="date" id="edit-lecture-date" required aria-label="Edit Lecture Date">
+                <input type="text" id="edit-lecture-title" required aria-label="Edit Lecture Title">
+                <div class="modal-actions">
+                    <button type="button" id="cancel-edit" class="secondary-btn">Cancel</button>
+                    <button type="submit" class="primary-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * State Management
+         * lectures: Array of lecture objects
+         * darkMode: Boolean theme preference
+         */
+        let lectures = [];
+        let darkMode = false;
+
+        // DOM Elements
+        const themeToggle = document.getElementById('theme-toggle');
+        const addLectureForm = document.getElementById('add-lecture-form');
+        const lectureDateInput = document.getElementById('lecture-date');
+        const lectureTitleInput = document.getElementById('lecture-title');
+        const errorMessage = document.getElementById('error-message');
+        const todaysRevisionsList = document.getElementById('todays-revisions-list');
+        const revisionLimitMessage = document.getElementById('revision-limit-message');
+        const allLecturesList = document.getElementById('all-lectures-list');
+        const editModal = document.getElementById('edit-modal');
+        const editLectureForm = document.getElementById('edit-lecture-form');
+        const editLectureId = document.getElementById('edit-lecture-id');
+        const editLectureDate = document.getElementById('edit-lecture-date');
+        const editLectureTitle = document.getElementById('edit-lecture-title');
+        const cancelEditBtn = document.getElementById('cancel-edit');
+
+        // Initialization
+        function init() {
+            loadData();
+            applyTheme();
+            
+            // Set default date to today for the add form
+            lectureDateInput.value = getTodayString();
+
+            render();
+            
+            // Event Listeners
+            themeToggle.addEventListener('click', toggleTheme);
+            addLectureForm.addEventListener('submit', handleAddLecture);
+            editLectureForm.addEventListener('submit', handleEditLecture);
+            cancelEditBtn.addEventListener('click', closeEditModal);
+        }
+
+        /**
+         * LocalStorage Persistence
+         * Loads and saves lectures and theme preference
+         */
+        function loadData() {
+            try {
+                const storedLectures = localStorage.getItem('lectures');
+                if (storedLectures) {
+                    lectures = JSON.parse(storedLectures);
+                }
+                
+                const storedTheme = localStorage.getItem('darkMode');
+                if (storedTheme !== null) {
+                    darkMode = JSON.parse(storedTheme);
+                }
+            } catch (e) {
+                console.error("Failed to parse localStorage data", e);
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('lectures', JSON.stringify(lectures));
+        }
+
+        function saveTheme() {
+            localStorage.setItem('darkMode', JSON.stringify(darkMode));
+        }
+
+        // Theme Handling
+        function applyTheme() {
+            if (darkMode) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            applyTheme();
+            saveTheme();
+        }
+
+        // Utility: Get today's date in YYYY-MM-DD format
+        function getTodayString() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * Revision Date Calculation
+         * Calculates 1, 3, 7, and 30 days after the start date.
+         * Uses local time parsing to avoid timezone offset issues.
+         */
+        function calculateRevisions(startDateStr) {
+            const revisions = {};
+            const intervals = { day1: 1, day3: 3, day7: 7, day30: 30 };
+            
+            for (const [key, days] of Object.entries(intervals)) {
+                const [year, month, day] = startDateStr.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+                date.setDate(date.getDate() + days);
+                
+                const rYear = date.getFullYear();
+                const rMonth = String(date.getMonth() + 1).padStart(2, '0');
+                const rDay = String(date.getDate()).padStart(2, '0');
+                revisions[key] = `${rYear}-${rMonth}-${rDay}`;
+            }
+            
+            return revisions;
+        }
+
+        // Handle adding a new lecture
+        function handleAddLecture(e) {
+            e.preventDefault();
+            
+            const title = lectureTitleInput.value.trim();
+            const date = lectureDateInput.value;
+            
+            if (!title || !date) return;
+            
+            // Validation: Maximum 2 lectures per start date
+            const lecturesOnDate = lectures.filter(l => l.startDate === date).length;
+            if (lecturesOnDate >= 2) {
+                showError("Only 2 lectures can be added per day.");
+                return;
+            }
+            
+            const newLecture = {
+                id: Date.now().toString(),
+                title: title,
+                startDate: date,
+                revisions: calculateRevisions(date),
+                completedRevisions: []
+            };
+            
+            lectures.push(newLecture);
+            saveData();
+            
+            lectureTitleInput.value = ''; // Reset title input
+            render();
+        }
+
+        function showError(msg) {
+            errorMessage.textContent = msg;
+            errorMessage.classList.remove('hidden');
+            setTimeout(() => {
+                errorMessage.classList.add('hidden');
+            }, 4000);
+        }
+
+        // Main Render Function
+        function render() {
+            renderTodaysRevisions();
+            renderAllLectures();
+        }
+
+        /**
+         * Today's Revisions Logic
+         * Detects which revisions match today's date and are not yet completed.
+         */
+        function renderTodaysRevisions() {
+            const today = getTodayString();
+            let dueRevisions = [];
+            
+            // Find all due revisions
+            lectures.forEach(lecture => {
+                for (const [dayKey, dateStr] of Object.entries(lecture.revisions)) {
+                    if (dateStr === today && !lecture.completedRevisions.includes(dayKey)) {
+                        dueRevisions.push({
+                            lecture: lecture,
+                            dayKey: dayKey
+                        });
+                    }
+                }
+            });
+            
+            /**
+             * Daily Limit Priority Algorithm
+             * 1. Lectures with fewer completed reviews get higher priority.
+             * 2. If tied, lectures with earlier start dates come first.
+             * 3. If still tied, sort alphabetically by lecture title.
+             */
+            dueRevisions.sort((a, b) => {
+                const completedDiff = a.lecture.completedRevisions.length - b.lecture.completedRevisions.length;
+                if (completedDiff !== 0) return completedDiff;
+                
+                if (a.lecture.startDate !== b.lecture.startDate) {
+                    return a.lecture.startDate.localeCompare(b.lecture.startDate);
+                }
+                
+                return a.lecture.title.localeCompare(b.lecture.title);
+            });
+            
+            const totalDue = dueRevisions.length;
+            const displayedRevisions = dueRevisions.slice(0, 2); // Max 2 per day
+            
+            todaysRevisionsList.innerHTML = '';
+            
+            if (displayedRevisions.length === 0) {
+                todaysRevisionsList.innerHTML = '<p class="text-muted" style="text-align: center; padding: 12px 0;">No revisions due today. Great job!</p>';
+                revisionLimitMessage.classList.add('hidden');
+            } else {
+                displayedRevisions.forEach(rev => {
+                    const card = document.createElement('div');
+                    card.className = 'card revision-card';
+                    
+                    const dayLabel = rev.dayKey.replace('day', 'Day ');
+                    
+                    card.innerHTML = `
+                        <div class="revision-header">
+                            <span class="revision-title">${escapeHTML(rev.lecture.title)}</span>
+                            <span class="revision-day">${dayLabel}</span>
+                        </div>
+                        <div class="text-muted">Started: ${rev.lecture.startDate}</div>
+                        <button class="primary-btn" style="margin-top: 4px;" onclick="markRevisionComplete('${rev.lecture.id}', '${rev.dayKey}')">Mark as Reviewed</button>
+                    `;
+                    todaysRevisionsList.appendChild(card);
+                });
+                
+                if (totalDue > 2) {
+                    revisionLimitMessage.textContent = `(${displayedRevisions.length} of ${totalDue} revisions shown — daily limit reached)`;
+                    revisionLimitMessage.classList.remove('hidden');
+                } else {
+                    revisionLimitMessage.classList.add('hidden');
+                }
+            }
+        }
+
+        // Render All Lectures Dashboard
+        function renderAllLectures() {
+            allLecturesList.innerHTML = '';
+            
+            // Sort by start date descending (newest first)
+            const sortedLectures = [...lectures].sort((a, b) => b.startDate.localeCompare(a.startDate));
+            
+            if (sortedLectures.length === 0) {
+                allLecturesList.innerHTML = '<p class="text-muted" style="text-align: center; padding: 24px 0;">No lectures added yet.</p>';
+                return;
+            }
+            
+            sortedLectures.forEach(lecture => {
+                const card = document.createElement('div');
+                card.className = 'card lecture-card';
+                
+                const completedCount = lecture.completedRevisions.length;
+                
+                card.innerHTML = `
+                    <div class="lecture-header">
+                        <div>
+                            <div class="revision-title">${escapeHTML(lecture.title)}</div>
+                            <div class="text-muted">Started: ${lecture.startDate}</div>
+                        </div>
+                        <div class="lecture-actions">
+                            <button class="icon-btn" onclick="openEditModal('${lecture.id}')" aria-label="Edit Lecture">✏️</button>
+                            <button class="icon-btn delete" onclick="deleteLecture('${lecture.id}')" aria-label="Delete Lecture">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="badges">
+                        ${renderBadge(lecture, 'day1', 'D1')}
+                        ${renderBadge(lecture, 'day3', 'D3')}
+                        ${renderBadge(lecture, 'day7', 'D7')}
+                        ${renderBadge(lecture, 'day30', 'D30')}
+                    </div>
+                    <div class="progress">${completedCount} / 4 completed</div>
+                `;
+                
+                allLecturesList.appendChild(card);
+            });
+        }
+
+        // Helper to render individual clickable badges
+        function renderBadge(lecture, dayKey, label) {
+            const isCompleted = lecture.completedRevisions.includes(dayKey);
+            const className = isCompleted ? 'badge completed' : 'badge';
+            return `<span class="${className}" onclick="toggleRevision('${lecture.id}', '${dayKey}')" title="Due: ${lecture.revisions[dayKey]}">${label}</span>`;
+        }
+
+        // Action: Mark revision complete from Today's list
+        window.markRevisionComplete = function(lectureId, dayKey) {
+            const lecture = lectures.find(l => l.id === lectureId);
+            if (lecture && !lecture.completedRevisions.includes(dayKey)) {
+                lecture.completedRevisions.push(dayKey);
+                saveData();
+                render();
+            }
+        };
+
+        // Action: Toggle revision completion from All Lectures list (Missed Review Recovery)
+        window.toggleRevision = function(lectureId, dayKey) {
+            const lecture = lectures.find(l => l.id === lectureId);
+            if (lecture) {
+                const index = lecture.completedRevisions.indexOf(dayKey);
+                if (index > -1) {
+                    lecture.completedRevisions.splice(index, 1); // Unmark
+                } else {
+                    lecture.completedRevisions.push(dayKey); // Mark
+                }
+                saveData();
+                render();
+            }
+        };
+
+        // Action: Delete a lecture
+        window.deleteLecture = function(lectureId) {
+            if (confirm('Are you sure you want to delete this lecture permanently?')) {
+                lectures = lectures.filter(l => l.id !== lectureId);
+                saveData();
+                render();
+            }
+        };
+
+        // Edit Modal Logic
+        window.openEditModal = function(lectureId) {
+            const lecture = lectures.find(l => l.id === lectureId);
+            if (lecture) {
+                editLectureId.value = lecture.id;
+                editLectureTitle.value = lecture.title;
+                editLectureDate.value = lecture.startDate;
+                editModal.classList.add('active');
+            }
+        };
+
+        function closeEditModal() {
+            editModal.classList.remove('active');
+        }
+
+        function handleEditLecture(e) {
+            e.preventDefault();
+            
+            const id = editLectureId.value;
+            const title = editLectureTitle.value.trim();
+            const date = editLectureDate.value;
+            
+            if (!title || !date) return;
+            
+            const lecture = lectures.find(l => l.id === id);
+            if (lecture) {
+                // If start date changes, recalculate revisions and reset progress
+                if (lecture.startDate !== date) {
+                    const lecturesOnDate = lectures.filter(l => l.startDate === date && l.id !== id).length;
+                    if (lecturesOnDate >= 2) {
+                        alert("Only 2 lectures can be added per day.");
+                        return;
+                    }
+                    lecture.startDate = date;
+                    lecture.revisions = calculateRevisions(date);
+                    lecture.completedRevisions = []; // Reset progress
+                }
+                
+                lecture.title = title;
+                saveData();
+                closeEditModal();
+                render();
+            }
+        }
+
+        // Utility: Escape HTML to prevent XSS attacks
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
+        }
+
+        // Run app initialization on DOM load
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
